@@ -1,17 +1,17 @@
 const mongoose = require("mongoose");
 
 const analysisSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Who owns this analysis
-  resumeId: { type: mongoose.Schema.Types.ObjectId, ref: "Resume" }, // Which resume was analyzed
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, 
+  resumeId: { type: mongoose.Schema.Types.ObjectId, ref: "Resume" }, 
   matchedJobs: [
     {
-      jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job" }, // Matching job
-      matchScore: { type: Number }, // AI match score (0-100%)
+      jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job" }, 
+      matchScore: { type: Number }, 
     },
   ],
-  extractedSkills: [String], // AI-detected skills
-  experience: { type: Number }, // AI-detected experience in years
-  generatedAt: { type: Date, default: Date.now }, // When analysis was done
+  extractedSkills: [String], 
+  experience: { type: Number }, 
+  generatedAt: { type: Date, default: Date.now }, 
 });
 
 module.exports = mongoose.model("Analysis", analysisSchema);

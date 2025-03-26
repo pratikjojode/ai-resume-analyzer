@@ -10,7 +10,7 @@ const auth = require("../middlewares/auth");
 const upload = require("../middlewares/upload");
 
 router.post("/upload", auth.required, upload.single("resume"), uploadResume);
-// Define the route to fetch resume by ID
+
 router.get("/getResume/:id", getResumeById);
 
 router.get("/getResumeByUser/:userId", getResumeByUserId);
