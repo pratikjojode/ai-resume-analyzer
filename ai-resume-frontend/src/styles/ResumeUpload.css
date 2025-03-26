@@ -1,0 +1,102 @@
+/* ResumeUpload.css - Fixed File Input */
+
+.upload-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2.5rem;
+  background: rgba(26, 27, 37, 0.8);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 6px 16px -2px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+.upload-container h2 {
+  font-size: 1.75rem;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(90deg, #7b61ff, #00d8c9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Fixed File Input Styles */
+.file-input-wrapper {
+  position: relative;
+  margin: 2rem 0;
+}
+
+.file-input-label {
+  display: block;
+  padding: 1.5rem;
+  background: rgba(15, 15, 26, 0.6);
+  border: 2px dashed rgba(123, 97, 255, 0.3);
+  border-radius: 12px;
+  color: rgba(224, 224, 255, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.file-input-label:hover {
+  border-color: rgba(123, 97, 255, 0.5);
+  background: rgba(15, 15, 26, 0.8);
+}
+
+.file-input-label span {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.file-input {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.file-name {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #9d8aff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Button Styles */
+.upload-button {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #7b61ff, #5d4acb);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(123, 97, 255, 0.4);
+}
+
+.upload-button:disabled {
+  background: linear-gradient(135deg, #6e6e8a, #4e4e6a);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .upload-container {
+    padding: 1.5rem;
+    margin: 1.5rem;
+  }
+}

@@ -18,7 +18,16 @@ const Login = () => {
       });
 
       localStorage.setItem("token", response.data.token);
-      toast.success("Login successful");
+      toast.success("Login successful", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
       navigate("/upload");
     } catch (error) {
       toast.error(error.response?.data?.msg || "An error occurred"); // Error notification

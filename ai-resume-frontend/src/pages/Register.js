@@ -1,20 +1,32 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { toast } from "react-toastify"; // Import the toast component
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import styles from "../styles/Register.css";
+import "../styles/Register.css";
+
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
+  const validatePassword = () => {
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
+      setPasswordError("Passwords do not match");
+      return false;
     }
+    if (password.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      return false;
+    }
+    setPasswordError("");
+    return true;
+  };
+
+  const handleRegister = async () => {
+    if (!validatePassword()) return;
 
     setLoading(true);
     try {
@@ -23,10 +35,19 @@ const Register = () => {
         password,
       });
 
-      toast.success("Registration successful");
-      navigate("/login"); // Redirect to login page after successful registration
+      toast.success("Registration successful!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      navigate("/login");
     } catch (error) {
-      toast.error(error.response?.data?.msg || "An error occurred");
+      toast.error(error.response?.data?.msg || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -34,7 +55,8 @@ const Register = () => {
 
   return (
     <div className="register-container">
-      <h2>Register</h2>
+      <h2>Create Account</h2>
+
       <div className="input-container">
         <label htmlFor="email">Email</label>
         <input
@@ -46,6 +68,7 @@ const Register = () => {
           required
         />
       </div>
+
       <div className="input-container">
         <label htmlFor="password">Password</label>
         <input
@@ -54,9 +77,11 @@ const Register = () => {
           placeholder="Enter your password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onBlur={validatePassword}
           required
         />
       </div>
+
       <div className="input-container">
         <label htmlFor="confirmPassword">Confirm Password</label>
         <input
@@ -65,15 +90,20 @@ const Register = () => {
           placeholder="Confirm your password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          onBlur={validatePassword}
           required
         />
+        {passwordError && (
+          <span className="password-match-error">{passwordError}</span>
+        )}
       </div>
+
       <button
         onClick={handleRegister}
-        disabled={loading}
+        disabled={loading || passwordError}
         className={`register-button ${loading ? "loading" : ""}`}
       >
-        {loading ? "Registering..." : "Register"}
+        {loading ? "Registering..." : "Create Account"}
       </button>
     </div>
   );

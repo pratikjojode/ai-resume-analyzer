@@ -1,23 +1,19 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { toast } from "react-toastify"; // Import the toast component
+import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import styles from "../styles/ResumeUpload.css";
+import "../styles/ResumeUpload.css";
 
 const ResumeUpload = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle file selection
   const handleFileChange = (e) => {
     const uploadedFile = e.target.files[0];
-    if (uploadedFile) {
-      setFile(uploadedFile);
-    }
+    setFile(uploadedFile);
   };
 
-  // Handle resume upload
   const handleUpload = async () => {
     if (!file) {
       toast.error("Please select a file to upload");
@@ -32,17 +28,21 @@ const ResumeUpload = () => {
       const response = await axios.post("/api/v1/resumes/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // Attach token if needed for authentication
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
-      toast.success("Resume uploaded successfully!");
-
-      // Extract resumeId from the response
-      const resumeId = response.data.resume._id;
-
-      // Navigate to the resume dashboard with the resumeId
-      navigate(`/resume/${resumeId}`);
+      toast.success("Resume uploaded successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "dark",
+      });
+      navigate(`/resume/${response.data.resume._id}`);
     } catch (error) {
       toast.error(
         error.response?.data?.msg || "An error occurred while uploading"
@@ -55,17 +55,28 @@ const ResumeUpload = () => {
   return (
     <div className="upload-container">
       <h2>Upload Your Resume</h2>
-      <div className="input-container">
-        <input
-          type="file"
-          accept=".pdf,.doc,.docx"
-          onChange={handleFileChange}
-        />
+
+      <div className="file-input-wrapper">
+        <label className="file-input-label">
+          <span>Choose File (PDF/DOC/DOCX)</span>
+          {file ? (
+            <span className="file-name">{file.name}</span>
+          ) : (
+            <span className="file-name">No file selected</span>
+          )}
+          <input
+            type="file"
+            className="file-input"
+            accept=".pdf,.doc,.docx"
+            onChange={handleFileChange}
+          />
+        </label>
       </div>
+
       <button
         onClick={handleUpload}
-        disabled={loading}
-        className={`upload-button ${loading ? "loading" : ""}`}
+        disabled={loading || !file}
+        className="upload-button"
       >
         {loading ? "Uploading..." : "Upload Resume"}
       </button>
