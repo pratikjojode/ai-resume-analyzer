@@ -1,0 +1,70 @@
+/* styles/NotFound.css */
+
+/* Layout Styles */
+.not-found-layout {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #003366, #000000);
+  color: white;
+  text-align: center;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  padding: 0 20px;
+}
+
+/* Typography Styles */
+.not-found-title {
+  font-size: 6rem;
+  font-weight: 800;
+  margin-bottom: 16px;
+  letter-spacing: 0.1em;
+  color: #ffffff;
+}
+
+.not-found-subtitle {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 40px;
+  color: #e2e8f0;
+  line-height: 1.5;
+}
+
+.not-found-btn {
+  padding: 0 30px;
+  height: 50px;
+  font-weight: 600;
+  font-size: 1.25rem;
+  border-radius: 25px;
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+  text-transform: uppercase;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.not-found-btn:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer Section */
+.not-found-footer {
+  position: absolute;
+  bottom: 20px;
+  font-size: 1rem;
+  color: #e2e8f0;
+  text-align: center;
+}
+
+.not-found-footer a {
+  color: #e2e8f0;
+  text-decoration: none;
+}
+
+.not-found-footer a:hover {
+  text-decoration: underline;
+}
