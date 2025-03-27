@@ -159,7 +159,7 @@ p {
   background: linear-gradient(90deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
+  color: black;
 }
 
 .hero p {
