@@ -47,5 +47,7 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ error: "Login failed", details: error.message });
   }
 });
+
+
 module.exports = router;
 const jwt = require("jsonwebtoken");
