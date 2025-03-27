@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaEnvelope,
@@ -7,11 +7,57 @@ import {
   FaGithub,
   FaLinkedin,
   FaTwitter,
+  FaBars,
+  FaTimes,
 } from "react-icons/fa";
 import "../styles/About.css";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 const About = () => {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [resumeId, setResumeId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const fetchUserResume = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setLoading(false);
+          setIsLoggedIn(false);
+          return;
+        }
+
+        setIsLoggedIn(true);
+        const decoded = jwtDecode(token);
+        const userId = decoded._id;
+
+        const response = await axios.get(
+          `/api/v1/resumes/getResumeByUser/${userId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data.success && response.data.resumes.length > 0) {
+          setResumeId(response.data.resumes[0]._id);
+        }
+      } catch (err) {
+        console.error("Error fetching user resumes:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserResume();
+  }, []);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   const skills = [
     { name: "HTML/CSS", level: 95 },
@@ -45,6 +91,31 @@ const About = () => {
     },
   ];
 
+  const renderResumeButton = () => {
+    if (loading) {
+      return <span className="loading-text">Loading...</span>;
+    }
+    if (!isLoggedIn) {
+      return (
+        <button
+          className="btn btn-secondary"
+          onClick={() => navigate("/login")}
+        >
+          Login to View Resume
+        </button>
+      );
+    }
+    return (
+      <button
+        className="btn btn-primary"
+        onClick={() => navigate(`/viewResume/${resumeId}`)}
+        disabled={!resumeId}
+      >
+        {resumeId ? "View Resume" : "No Resume Available"}
+      </button>
+    );
+  };
+
   return (
     <div className="about-page">
       {/* Header */}
@@ -53,20 +124,39 @@ const About = () => {
           <h1 className="logo" onClick={() => navigate("/")}>
             ResumeGenius
           </h1>
+
+          <button className="hamburger-btn" onClick={toggleSidebar}>
+            {sidebarOpen ? <FaTimes /> : <FaBars />}
+          </button>
+
           <nav className="nav-links">
             <a href="/about">About</a>
             <a href="/experience">Experience</a>
             <a href="/contact">Contact</a>
-
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate("/resume")}
-            >
-              View Resume
-            </button>
+            {renderResumeButton()}
           </nav>
         </div>
       </header>
+
+      {/* Mobile Sidebar */}
+      <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-content">
+          <a href="/about" onClick={toggleSidebar}>
+            About
+          </a>
+          <a href="/experience" onClick={toggleSidebar}>
+            Experience
+          </a>
+          <a href="/contact" onClick={toggleSidebar}>
+            Contact
+          </a>
+          {renderResumeButton()}
+        </div>
+      </div>
+
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={toggleSidebar} />
+      )}
 
       {/* Hero Section */}
       <section className="hero">
@@ -111,7 +201,7 @@ const About = () => {
               <ul>
                 <li>
                   ✅ <strong>AI-Powered Analysis</strong> – Get instant feedback
-                  on your resume’s strengths.
+                  on your resume's strengths.
                 </li>
                 <li>
                   ✅ <strong>ATS Optimization</strong> – Ensure your resume

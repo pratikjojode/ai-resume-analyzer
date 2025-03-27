@@ -18,6 +18,8 @@ import NotFound from "./pages/NotFound";
 import Profile from "./users/Profile";
 import About from "./pages/About";
 
+import ResumeViewer from "./pages/ResumeViewer";
+
 // Component to handle scroll to top
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -36,6 +38,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/viewResume/:resumeId" element={<ResumeViewer />} />
         <Route path="/about" element={<About />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/login" element={<Login />} />

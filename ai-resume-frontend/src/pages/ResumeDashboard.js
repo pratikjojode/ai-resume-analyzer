@@ -2,30 +2,59 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
+import {
+  FiHome,
+  FiLogIn,
+  FiUser,
+  FiFileText,
+  FiStar,
+  FiTool,
+  FiBriefcase,
+  FiAward,
+  FiBarChart2,
+  FiBook,
+  FiCode,
+  FiLayers,
+  FiLink,
+} from "react-icons/fi";
 import "../styles/resumeDashboard.css";
-import { Layout, Typography, Space, Button } from "antd";
-import { FiHome, FiLogIn, FiUser } from "react-icons/fi";
 
 const ResumeDashboard = () => {
   const { resumeId } = useParams();
+  const navigate = useNavigate();
   const [resumeData, setResumeData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("overview");
-  const { Header } = Layout;
-  const { Title } = Typography;
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchResumeData = async () => {
       try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("Authentication required. Please log in.");
+        }
+
         const response = await axios.get(
-          `/api/v1/resumes/getResume/${resumeId}`
+          `/api/v1/resumes/getResume/${resumeId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Cache-Control": "no-cache",
+            },
+          }
         );
-        setResumeData(response.data.resume);
-      } catch (error) {
-        setError("Failed to fetch resume data. Please try again later.");
-        toast.error("Failed to fetch resume data.");
+
+        if (!response.data?.success) {
+          throw new Error(
+            response.data?.message || "Failed to fetch resume data"
+          );
+        }
+
+        setResumeData(response.data.data);
+      } catch (err) {
+        console.error("Resume fetch error:", err);
+        setError(err.message);
+        toast.error(err.message);
       } finally {
         setLoading(false);
       }
@@ -34,394 +63,291 @@ const ResumeDashboard = () => {
     fetchResumeData();
   }, [resumeId]);
 
-  if (loading) {
+  // Extract contact information from rawText
+  const extractContactInfo = (rawText) => {
+    if (!rawText) return {};
+    const lines = rawText.split("\n");
+    const contactLine = lines[2] || "";
+    const portfolioMatch = rawText.match(/Por[^\n]*olio:(.*?)\n/);
+    const linkedInMatch = rawText.match(/LinkedIn:(.*?)\n/);
+    const githubMatch = rawText.match(/Github:(.*?)\n/);
+
+    return {
+      name: lines[2]?.split(",")[0]?.trim() || "Unknown",
+      contact: contactLine,
+      portfolio: portfolioMatch ? portfolioMatch[1].trim() : null,
+      linkedIn: linkedInMatch ? linkedInMatch[1].trim() : null,
+      github: githubMatch ? githubMatch[1].trim() : null,
+    };
+  };
+
+  // Extract projects from rawText
+  const extractProjects = (rawText) => {
+    if (!rawText) return [];
+    const projectsSection = rawText.split("Projects:")[1];
+    if (!projectsSection) return [];
+
+    return projectsSection
+      .split("\n")
+      .filter((line) => line.trim() && line.includes(":"))
+      .map((project) => {
+        const [title, ...descParts] = project.split(":");
+        return {
+          title: title.trim(),
+          description: descParts.join(":").trim(),
+        };
+      });
+  };
+
+  if (loading) return <div className="loading">Loading resume analysis...</div>;
+  if (error) return <div className="error">{error}</div>;
+  if (!resumeData) return <div className="empty">No Resume Found</div>;
+
+  const { filename, uploadedAt, parsedData } = resumeData;
+  const { aiAnalysis = {}, rawText = "", preview = "" } = parsedData || {};
+  const contactInfo = extractContactInfo(rawText);
+  const projects = extractProjects(rawText);
+
+  // Deconstruct all necessary fields from aiAnalysis
+  const {
+    resume_quality_score,
+    skills = [],
+    experience = {},
+    education = [],
+    summary,
+    job_match_percentage,
+    missing_keywords = [],
+    improvement_suggestions = [],
+    analyzedAt,
+  } = aiAnalysis;
+
+  const renderScoreBadge = (score) => {
+    let className =
+      "score-badge " +
+      (score >= 8 ? "excellent" : score >= 6 ? "good" : "poor");
     return (
-      <div className="resume-dashboard-container dark-theme">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading your resume analysis...</p>
-        </div>
+      <div className={className}>
+        <span className="score-value">{score || "N/A"}</span>
+        <span className="score-max">/10</span>
       </div>
     );
-  }
+  };
 
-  if (error) {
+  const renderMatchPercentage = (percentage) => {
     return (
-      <div className="resume-dashboard-container dark-theme">
-        <div className="error-alert">
-          <span className="alert-icon">⚠️</span>
-          <p>{error}</p>
-        </div>
+      <div className="match-percentage">
+        <div
+          className="match-bar"
+          style={{ width: `${percentage || 0}%` }}
+        ></div>
+        <span>{percentage || 0}%</span>
       </div>
     );
-  }
-
-  if (!resumeData) {
-    return (
-      <div className="resume-dashboard-container dark-theme">
-        <div className="info-alert">
-          <span className="alert-icon">ℹ️</span>
-          <p>No resume data found</p>
-        </div>
-      </div>
-    );
-  }
-
-  const aiAnalysis = resumeData?.parsedData?.aiAnalysis || {};
-  const rawText = resumeData?.parsedData?.rawText || "";
-
-  const scoreClass =
-    aiAnalysis.resume_quality_score >= 7
-      ? "score-high"
-      : aiAnalysis.resume_quality_score >= 5
-      ? "score-medium"
-      : "score-low";
+  };
 
   return (
-    <div className="resume-dashboard-container dark-theme">
-      {/* Premium Header - Dark Theme */}
-      <Header className="upload-header-nav">
-        <div className="header-content">
-          <Title level={3} className="logo">
-            <span>Resume</span>Genius
-          </Title>
-          <Space size="large">
-            <Button type="text" onClick={() => navigate("/")} icon={<FiHome />}>
-              Home
-            </Button>
-            <Button
-              type="text"
-              onClick={() => navigate("/profile")}
-              icon={<FiUser />}
-            >
-              Profile
-            </Button>
-            <Button
-              type="primary"
-              shape="round"
-              onClick={() => navigate("/login")}
-              icon={<FiLogIn />}
-              style={{
-                background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
-                border: "none",
-              }}
-            >
-              Login
-            </Button>
-          </Space>
+    <div className="resume-dashboard">
+      <header className="dashboard-header">
+        <div className="logo" onClick={() => navigate("/")}>
+          <FiFileText size={24} />
+          <h2>ResumeGenius</h2>
         </div>
-      </Header>
+        <nav className="nav-links">
+          <button onClick={() => navigate("/")}>
+            <FiHome /> Home
+          </button>
+          <button onClick={() => navigate("/profile")}>
+            <FiUser /> Profile
+          </button>
+        </nav>
+      </header>
 
-      {/* Dashboard Title */}
-      <div className="dashboard-title-container dark-title">
-        <h1 className="dashboard-title">
-          <span className="title-icon">📝</span> Resume Analysis Dashboard
-        </h1>
-        <p className="dashboard-subtitle">
-          Comprehensive insights to optimize your resume for better
-          opportunities
-        </p>
-      </div>
+      <main className="dashboard-content">
+        {/* Candidate Profile Section */}
+        <section className="profile-section">
+          <div className="profile-header">
+            <h2>{contactInfo.name}</h2>
 
-      {/* File Info Card */}
-      <div className="file-info-card premium-card dark-card">
-        <div className="file-header">
-          <div className="file-icon-container">
-            <span className="file-icon">📄</span>
-            <div className="file-icon-bg dark-icon-bg"></div>
+            <div className="social-links">
+              {contactInfo.portfolio && (
+                <a
+                  href={contactInfo.portfolio}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FiLink /> Portfolio
+                </a>
+              )}
+              {contactInfo.linkedIn && (
+                <a
+                  href={contactInfo.linkedIn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FiLink /> LinkedIn
+                </a>
+              )}
+              {contactInfo.github && (
+                <a
+                  href={contactInfo.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FiLink /> GitHub
+                </a>
+              )}
+            </div>
           </div>
-          <div className="file-info">
-            <h2>{resumeData.filename}</h2>
-            <p className="upload-time">
-              <span className="time-icon">🕒</span>
-              Uploaded: {new Date(resumeData.uploadedAt).toLocaleString()}
+
+          <div className="resume-meta">
+            <p>
+              <strong>Filename:</strong> {filename.replace(/^[0-9]+-/, "")}
+            </p>
+            <p>
+              <strong>Uploaded:</strong> {new Date(uploadedAt).toLocaleString()}
+            </p>
+            <p>
+              <strong>Analyzed:</strong> {new Date(analyzedAt).toLocaleString()}
             </p>
           </div>
-          <button className="download-btn dark-download">
-            <span className="download-icon">⬇️</span> Download Report
-          </button>
-        </div>
-      </div>
+        </section>
 
-      <div className="dashboard-grid">
-        {/* Left Column */}
-        <div className="parsed-content-card premium-card dark-card">
-          <div className="card-header dark-card-header">
-            <h3>
-              <span className="header-icon">🔍</span> Parsed Resume Content
-            </h3>
-            <div className="card-actions">
-              <button className="card-action-btn dark-action">
-                <span className="action-icon">🔎</span> Search
-              </button>
-              <button className="card-action-btn dark-action">
-                <span className="action-icon">📋</span> Copy
-              </button>
-            </div>
-          </div>
-          <div className="content-wrapper dark-content">
-            <pre className="parsed-content dark-parsed">{rawText}</pre>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="right-column">
-          {/* Resume Score */}
-          <div
-            className={`score-card premium-card dark-card ${scoreClass}-glow`}
-          >
-            <div className="card-header dark-card-header">
-              <h3>
-                <span className="header-icon">⭐</span> Resume Quality Score
-              </h3>
-              <div
-                className="score-tooltip dark-tooltip"
-                title="Based on industry standards"
-              >
-                <span className="tooltip-icon">ℹ️</span>
-              </div>
-            </div>
-            <div className="score-display">
-              <div className={`score-badge ${scoreClass}`}>
-                {aiAnalysis.resume_quality_score || "N/A"}
-                <span className="score-out-of">/10</span>
-              </div>
-              <div className="progress-container dark-progress">
-                <div
-                  className="progress-bar"
-                  style={{
-                    width: `${(aiAnalysis.resume_quality_score || 0) * 10}%`,
-                  }}
-                ></div>
-              </div>
-            </div>
-            <div className="score-feedback dark-feedback">
-              {aiAnalysis.resume_quality_score >= 7
-                ? "Excellent resume! Strong alignment with top industry standards."
-                : aiAnalysis.resume_quality_score >= 5
-                ? "Good foundation, but has room for strategic improvements."
-                : "Needs significant improvement to be competitive."}
-            </div>
-            <div className="score-comparison dark-comparison">
-              <div className="comparison-item">
-                <span className="comparison-label">Industry Avg:</span>
-                <span className="comparison-value">6.2</span>
-              </div>
-              <div className="comparison-item">
-                <span className="comparison-label">Top 10%:</span>
-                <span className="comparison-value">8.5+</span>
-              </div>
-            </div>
+        {/* Overview Stats */}
+        <section className="overview-section">
+          <div className="stat-card">
+            <FiStar className="stat-icon" />
+            <h4>Resume Score</h4>
+            {renderScoreBadge(resume_quality_score)}
           </div>
 
-          {/* Skills */}
-          <div className="skills-card premium-card dark-card">
-            <div className="card-header dark-card-header">
-              <h3>
-                <span className="header-icon">🛠️</span> Skills Analysis
-              </h3>
-              <div className="skills-count dark-count">
-                {aiAnalysis.skills?.length || 0} skills detected
-              </div>
-            </div>
-            {aiAnalysis.skills?.length > 0 ? (
-              <>
-                <div className="skills-container dark-skills">
-                  {aiAnalysis.skills.map((skill, index) => (
-                    <span key={index} className="skill-chip dark-chip">
-                      {skill}
-                      <span className="skill-demand dark-demand">+12%</span>
-                    </span>
-                  ))}
-                </div>
-                <div className="skills-insight dark-insight">
-                  <span className="insight-icon">💡</span>
-                  <p>
-                    Your skills match <strong>78%</strong> of top-performing
-                    resumes in your field.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div className="no-data-message dark-message">
-                <span className="no-data-icon">❓</span>
-                No skills data available
+          <div className="stat-card">
+            <FiBriefcase className="stat-icon" />
+            <h4>Experience</h4>
+            <p>{experience.total_years || "Less than 1 year"}</p>
+            {experience.positions?.length > 0 && (
+              <div className="positions">
+                {experience.positions.map((pos, i) => (
+                  <span key={i} className="position-tag">
+                    {pos}
+                  </span>
+                ))}
               </div>
             )}
           </div>
-        </div>
 
-        {/* Bottom Row */}
-        <div className="experience-card premium-card dark-card">
-          <div className="card-header dark-card-header">
-            <h3>
-              <span className="header-icon">💼</span> Experience Analysis
-            </h3>
-            <div className="card-badge dark-badge">Key Metric</div>
+          <div className="stat-card">
+            <FiAward className="stat-icon" />
+            <h4>Job Match</h4>
+            {renderMatchPercentage(job_match_percentage)}
           </div>
-          <div className="experience-summary dark-summary">
-            <div className="experience-metric">
-              <p className="metric-label dark-label">Total Experience</p>
-              <p className="metric-value dark-value">
-                {aiAnalysis.experience?.total_years || "N/A"} years
-              </p>
-            </div>
-            <div className="experience-metric">
-              <p className="metric-label dark-label">Seniority Level</p>
-              <p className="metric-value dark-value">Mid-Career</p>
-            </div>
-          </div>
-          {aiAnalysis.experience?.positions?.length > 0 ? (
-            <>
-              <h4 className="section-subtitle dark-subtitle">
-                Position Highlights
-              </h4>
-              <ul className="positions-list dark-list">
-                {aiAnalysis.experience.positions.map((position, index) => (
-                  <li key={index} className="position-item dark-item">
-                    <span className="bullet">•</span> {position}
-                  </li>
-                ))}
-              </ul>
-              <div className="experience-chart dark-chart">
-                <div className="chart-placeholder"></div>
-                <p className="chart-caption dark-caption">
-                  Experience distribution compared to industry benchmarks
-                </p>
+        </section>
+
+        {/* Main Content Grid */}
+        <div className="content-grid">
+          {/* Left Column */}
+          <div className="left-column">
+            {/* Summary Section */}
+            <section className="card summary-section">
+              <h3>
+                <FiFileText /> Professional Summary
+              </h3>
+              <p>{summary || "No summary available."}</p>
+            </section>
+
+            {/* Skills Section */}
+            <section className="card skills-section">
+              <h3>
+                <FiTool /> Technical Skills
+              </h3>
+              <div className="skills-grid">
+                {skills.length > 0 ? (
+                  skills.map((skill, i) => (
+                    <span key={i} className="skill-tag">
+                      {skill}
+                    </span>
+                  ))
+                ) : (
+                  <p>No skills found.</p>
+                )}
               </div>
-            </>
-          ) : (
-            <div className="no-data-message dark-message">
-              <span className="no-data-icon">❓</span>
-              No experience data available
-            </div>
-          )}
-        </div>
+            </section>
 
-        <div className="education-card premium-card dark-card">
-          <div className="card-header dark-card-header">
-            <h3>
-              <span className="header-icon">🎓</span> Education Analysis
-            </h3>
-            <div className="card-badge dark-badge">Verified</div>
+            {/* Education Section */}
+            {education.length > 0 && (
+              <section className="card education-section">
+                <h3>
+                  <FiBook /> Education
+                </h3>
+                <ul className="education-list">
+                  {education.map((edu, i) => (
+                    <li key={i}>{edu}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
-          {aiAnalysis.education?.length > 0 ? (
-            <>
-              <ul className="education-list dark-list">
-                {aiAnalysis.education.map((edu, index) => (
-                  <li key={index} className="education-item dark-item">
-                    <span className="bullet">•</span> {edu}
-                  </li>
-                ))}
-              </ul>
-              <div className="education-impact dark-impact">
-                <span className="impact-icon">📈</span>
-                <p>
-                  Your education background increases interview chances by{" "}
-                  <strong>22%</strong> for relevant positions.
-                </p>
-              </div>
-            </>
-          ) : (
-            <div className="no-data-message dark-message">
-              <span className="no-data-icon">❓</span>
-              No education data available
-            </div>
-          )}
-        </div>
 
-        <div className="improvements-card premium-card dark-card">
-          <div className="card-header dark-card-header">
-            <h3>
-              <span className="header-icon">🔧</span> Optimization
-              Recommendations
-            </h3>
-            <div className="card-badge accent dark-accent">Priority</div>
-          </div>
-          {aiAnalysis.missing_keywords?.length > 0 ? (
-            <>
-              <div className="improvements-container dark-improvements">
-                {aiAnalysis.missing_keywords
-                  .slice(0, 5)
-                  .map((keyword, index) => (
-                    <div key={index} className="improvement-item dark-item">
-                      <span className="improvement-priority">
-                        {index < 2 ? "❗" : "✓"}
-                      </span>
-                      <div className="improvement-content">
-                        <p className="improvement-text dark-text">
-                          Add <strong>{keyword}</strong>
-                        </p>
-                        <p className="improvement-detail dark-detail">
-                          Found in 82% of top resumes | +15% impact
-                        </p>
-                      </div>
+          {/* Right Column */}
+          <div className="right-column">
+            {/* Projects Section */}
+            {projects.length > 0 && (
+              <section className="card projects-section">
+                <h3>
+                  <FiLayers /> Key Projects
+                </h3>
+                <div className="projects-list">
+                  {projects.map((project, i) => (
+                    <div key={i} className="project-item">
+                      <h4>{project.title}</h4>
+                      <p>{project.description}</p>
                     </div>
                   ))}
-              </div>
-              <button className="see-all-btn dark-see-all">
-                See all {aiAnalysis.missing_keywords.length} recommendations →
-              </button>
-            </>
-          ) : (
-            <div className="success-message dark-success">
-              <span className="success-icon">🎉</span>
-              <p>
-                No major improvements suggested! Your resume is well-optimized.
-              </p>
-            </div>
-          )}
-        </div>
+                </div>
+              </section>
+            )}
 
-        <div className="summary-card premium-card dark-card">
-          <div className="card-header dark-card-header">
-            <h3>
-              <span className="header-icon">🤖</span> AI Analysis Summary
-            </h3>
-            <div className="card-actions">
-              <button className="card-action-btn dark-action">
-                <span className="action-icon">🔊</span> Read Aloud
-              </button>
-            </div>
+            {/* Improvements Section */}
+            <section className="card improvements-section">
+              <h3>
+                <FiBarChart2 /> Optimization Recommendations
+              </h3>
+              <div className="recommendations">
+                <h4>Missing Keywords:</h4>
+                <div className="keywords-grid">
+                  {missing_keywords.length > 0 ? (
+                    missing_keywords.map((keyword, i) => (
+                      <span key={i} className="keyword-tag">
+                        {keyword}
+                      </span>
+                    ))
+                  ) : (
+                    <p>No missing keywords detected.</p>
+                  )}
+                </div>
+
+                <h4>Improvement Suggestions:</h4>
+                <ul className="suggestions-list">
+                  {improvement_suggestions.length > 0 ? (
+                    improvement_suggestions.map((suggestion, i) => (
+                      <li key={i}>{suggestion}</li>
+                    ))
+                  ) : (
+                    <p>No suggestions available.</p>
+                  )}
+                </ul>
+              </div>
+            </section>
           </div>
-          {aiAnalysis.summary ? (
-            <div className="summary-content dark-summary-content">
-              <p>{aiAnalysis.summary}</p>
-              <div className="summary-metrics dark-metrics">
-                <div className="metric dark-metric">
-                  <span className="metric-value dark-value">87%</span>
-                  <span className="metric-label dark-label">
-                    ATS Compatibility
-                  </span>
-                </div>
-                <div className="metric dark-metric">
-                  <span className="metric-value dark-value">4.2/5</span>
-                  <span className="metric-label dark-label">Readability</span>
-                </div>
-                <div className="metric dark-metric">
-                  <span className="metric-value dark-value">92%</span>
-                  <span className="metric-label dark-label">Completion</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="no-data-message dark-message">
-              <span className="no-data-icon">❓</span>
-              No summary available
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Footer */}
-      <footer className="premium-footer dark-footer">
-        <p>ResumePro Analytics Dashboard • {new Date().getFullYear()}</p>
-        <div className="footer-links dark-links">
-          <a href="#">Privacy</a>
-          <a href="#">Terms</a>
-          <a href="#">Help Center</a>
-        </div>
-      </footer>
+        {/* Raw Text Preview */}
+        <section className="card raw-text-section">
+          <h3>Parsed Resume Content</h3>
+          <div className="raw-text-container">
+            <pre>{preview || rawText}</pre>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };

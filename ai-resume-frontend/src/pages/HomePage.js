@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaUpload,
@@ -9,12 +9,19 @@ import {
   FaRocket,
   FaUser,
   FaCheckCircle,
+  FaBars,
+  FaTimes,
 } from "react-icons/fa";
 import { Avatar } from "antd";
 import "../styles/HomePage.css";
 
 const Home = () => {
   const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
 
   // Features data
   const features = [
@@ -131,6 +138,13 @@ const Home = () => {
           <h1 className="logo" onClick={() => navigate("/")}>
             ResumeGenius
           </h1>
+
+          {/* Hamburger Menu Button */}
+          <button className="hamburger-btn" onClick={toggleSidebar}>
+            {sidebarOpen ? <FaTimes /> : <FaBars />}
+          </button>
+
+          {/* Desktop Navigation */}
           <nav className="nav-links">
             <a href="#features">Features</a>
             <a href="#how-it-works">How It Works</a>
@@ -145,6 +159,38 @@ const Home = () => {
           </nav>
         </div>
       </header>
+
+      {/* Mobile Sidebar */}
+      <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-content">
+          <a href="#features" onClick={toggleSidebar}>
+            Features
+          </a>
+          <a href="#how-it-works" onClick={toggleSidebar}>
+            How It Works
+          </a>
+          <a href="#team" onClick={toggleSidebar}>
+            Our Team
+          </a>
+          <a href="/about" onClick={toggleSidebar}>
+            About
+          </a>
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              navigate("/upload");
+              toggleSidebar();
+            }}
+          >
+            Try Now
+          </button>
+        </div>
+      </div>
+
+      {/* Overlay for sidebar */}
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={toggleSidebar} />
+      )}
 
       {/* Hero Section */}
       <section className="hero">

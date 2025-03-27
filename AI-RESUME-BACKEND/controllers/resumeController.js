@@ -1,50 +1,61 @@
 const axios = require("axios");
-const fs = require("fs");
+const fs = require("fs").promises; // Async file handling
 const path = require("path");
 const pdf = require("pdf-parse");
+const Tesseract = require("tesseract.js"); // OCR for scanned PDFs
 const Resume = require("../models/Resume");
+const mongoose = require("mongoose");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const MAX_TEXT_LENGTH = 5000; // Reduced text length for better AI processing
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
+const MAX_TEXT_LENGTH = 5000; // Limit to avoid exceeding AI token limit
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB size restriction
 const ALLOWED_MIME_TYPES = ["application/pdf"];
 
-// Delay function for retries
-const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+// Utility function for delay (exponential backoff)
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Function to analyze resume using Google Gemini AI
+/**
+ * 🔹 AI Resume Analysis using Google Gemini API
+ */
 const analyzeResumeWithAI = async (resumeText) => {
   const prompt = `
-    Analyze this resume and provide structured JSON output with these fields:
+    **🔹 AI Resume Analyzer**
+    You are an expert AI specializing in professional resume analysis. Given a resume, provide a structured JSON output with key insights.
+
+    **🔹 Output Format (JSON)**
     {
-      "skills": [array of top 10 technical skills],
+      "skills": ["Top 10 most relevant skills"],
       "experience": {
-        "total_years": number,
-        "positions": [array of job titles]
+        "total_years": "Estimated total years of experience",
+        "positions": ["List of job titles"],
+        "industries": ["Key industries worked in"]
       },
-      "education": [array of degrees/certifications],
-      "missing_keywords": [array of relevant missing keywords],
-      "resume_quality_score": number (1-10),
-      "job_match_percentage": number (0-100),
-      "summary": "brief professional summary"
+      "education": ["Degrees, certifications"],
+      "leadership_roles": ["Key leadership roles, if any"],
+      "missing_keywords": ["Suggested missing keywords to improve resume"],
+      "resume_quality_score": "Score (1-10) based on clarity, structure, ATS optimization",
+      "job_match_percentage": "Estimated match percentage (0-100%) for relevant job roles",
+      "improvement_suggestions": ["Actionable suggestions to enhance resume"],
+      "summary": "Brief 2-line professional summary"
     }
 
-    Rules:
-    - Return ONLY valid JSON
-    - No additional commentary
-    - Escape special characters properly
+    **🔹 Guidelines**
+    - Return ONLY a valid JSON response (no additional text, markdown, or explanations).
+    - Use NLP to extract meaningful insights from the text.
+    - Evaluate resume formatting, keyword optimization, and industry relevance.
 
-    Resume Content:
+    **🔹 Resume Content:**
     ${resumeText.substring(0, MAX_TEXT_LENGTH)}
   `;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    // Retry mechanism
+  const requestData = { contents: [{ parts: [{ text: prompt }] }] };
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const response = await axios.post(
         `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-        { contents: [{ parts: [{ text: prompt }] }] },
-        { timeout: 20000 } // Increased timeout to 20s
+        requestData,
+        { timeout: 20000 }
       );
 
       const aiResponseText =
@@ -52,79 +63,92 @@ const analyzeResumeWithAI = async (resumeText) => {
 
       return JSON.parse(aiResponseText.replace(/```json|```/g, "").trim());
     } catch (error) {
-      console.error(
-        `AI Analysis Error (Attempt ${attempt + 1}):`,
-        error.message
-      );
-      if (attempt < 1) await delay(5000); // Wait 5 seconds before retrying
+      console.error(`AI Analysis Error (Attempt ${attempt}):`, error.message);
+      if (attempt < 3) await delay(5000 * attempt); // Exponential backoff (5s, 10s)
     }
   }
 
-  return { error: "AI analysis failed after retries" };
+  return { error: "AI analysis failed after multiple retries" };
 };
 
-// Function to upload and process resume
+/**
+ * 🔹 Extract text from PDF (with OCR fallback)
+ */
+const extractTextFromPDF = async (filePath) => {
+  try {
+    const dataBuffer = await fs.readFile(filePath);
+    const pdfData = await pdf(dataBuffer);
+
+    // If extracted text is too short, try OCR
+    if (pdfData.text.trim().length < 50) {
+      console.warn("⚠️ PDF text extraction failed, using OCR...");
+      const ocrResult = await Tesseract.recognize(filePath);
+      return ocrResult.data.text;
+    }
+
+    return pdfData.text;
+  } catch (error) {
+    console.error("PDF Parsing Error:", error.message);
+    throw new Error("Failed to extract text from PDF");
+  }
+};
+
+/**
+ * 🔹 Upload and Process Resume
+ */
 const uploadResume = async (req, res) => {
   let filePath = null;
 
   try {
-    if (!req.user) {
+    if (!req.user)
       return res.status(401).json({ error: "Authentication required" });
-    }
-
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     filePath = path.resolve(req.file.path);
 
     // Validate file type and size
-    if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
+    if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype))
       throw new Error("Only PDF files are allowed");
-    }
-
-    if (req.file.size > MAX_FILE_SIZE) {
+    if (req.file.size > MAX_FILE_SIZE)
       throw new Error("File size exceeds 5MB limit");
-    }
 
-    // Read and parse PDF
-    const dataBuffer = fs.readFileSync(filePath);
-    const pdfData = await pdf(dataBuffer);
-    const resumeText = pdfData.text.substring(0, MAX_TEXT_LENGTH);
+    // Extract text from PDF (with OCR fallback)
+    let resumeText = await extractTextFromPDF(filePath);
+    console.log("✅ Extracted Resume Text:", resumeText.substring(0, 500)); // Debugging log
 
-    // Create resume record in database
+    // Ensure we only process max text length
+    resumeText = resumeText.substring(0, MAX_TEXT_LENGTH);
+
+    // Create a new resume record
     const newResume = new Resume({
       userId: req.user._id,
       filename: req.file.filename,
-      filePath: filePath,
+      filePath,
       parsedData: {
-        rawText: resumeText.substring(0, 500) + "...",
+        rawText: resumeText, // Store full text
+        preview: resumeText.substring(0, 500) + "...", // Short preview for UI
         length: resumeText.length,
       },
     });
 
     // AI Analysis
-    const aiAnalysis = await analyzeResumeWithAI(resumeText);
     newResume.parsedData.aiAnalysis = {
-      ...aiAnalysis,
+      ...(await analyzeResumeWithAI(resumeText)),
       analyzedAt: new Date(),
     };
 
     await newResume.save();
 
-    res.status(201).json({
-      success: true,
-      resume: newResume.toJSON(),
-    });
+    res.status(201).json({ success: true, resume: newResume.toJSON() });
   } catch (error) {
     console.error("Upload Error:", error.message);
 
-    // Delete the file if an error occurs
+    // Cleanup: Delete file if error occurs
     if (filePath) {
       try {
-        fs.unlinkSync(filePath);
-      } catch (err) {
-        console.error("File cleanup error:", err);
+        await fs.unlink(filePath);
+      } catch (cleanupError) {
+        console.error("File cleanup error:", cleanupError);
       }
     }
 
@@ -136,40 +160,56 @@ const uploadResume = async (req, res) => {
   }
 };
 
-// Controller to get resume by resumeId
+/**
+ * 🔹 Get Resume by ID
+ */
 const getResumeById = async (req, res) => {
   try {
-    const resumeId = req.params.id; // Extract resume ID from the URL
-    const resume = await Resume.findById(resumeId); // Use Mongoose to fetch the resume
+    const { id } = req.params;
 
-    if (!resume) {
-      return res.status(404).json({ msg: "Resume not found" });
-    }
+    if (!id)
+      return res
+        .status(400)
+        .json({ success: false, error: "Resume ID is required" });
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid resume ID format" });
 
-    res.json({ resume });
+    const resume = await Resume.findById(id).lean(); // Use .lean() to improve performance
+
+    if (!resume)
+      return res
+        .status(404)
+        .json({ success: false, error: "Resume not found" });
+
+    res.status(200).json({ success: true, data: resume });
   } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Server error");
+    console.error("Error fetching resume:", error.message);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
+/**
+ * 🔹 Get Resumes by User ID
+ */
 const getResumeByUserId = async (req, res) => {
   const { userId } = req.params;
 
-  console.log("Fetching resumes for userId:", userId); // Log userId for debugging
+  console.log("Fetching resumes for userId:", userId); // Debug log
 
   try {
-    // Fetch all resumes for a specific user
-    const resumes = await Resume.find({ userId });
-    console.log("Resumes found:", resumes); // Log resumes found
+    if (!mongoose.Types.ObjectId.isValid(userId))
+      return res.status(400).json({ error: "Invalid User ID format" });
 
-    if (resumes.length === 0) {
+    const resumes = await Resume.find({ userId }).lean();
+
+    if (!resumes.length)
       return res.status(404).json({ msg: "No resumes found for this user" });
-    }
 
     return res.json({ success: true, resumes });
   } catch (error) {
-    console.error("Error fetching resumes:", error); // Log any errors
+    console.error("Error fetching resumes:", error);
     return res.status(500).json({ msg: "Server error" });
   }
 };
