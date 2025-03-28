@@ -177,6 +177,56 @@ const Profile = () => {
           </div>
         )}
       </main>
+      <footer className="home-footer">
+        <div className="container">
+          <div className="footer-content">
+            <div className="footer-column">
+              <h3>ResumeGenius</h3>
+              <p>
+                The smart way to create, analyze, and optimize your resume for
+                today's job market.
+              </p>
+            </div>
+            <div className="footer-column">
+              <h4>Quick Links</h4>
+              <ul>
+                <li>
+                  <a href="#features">Features</a>
+                </li>
+                <li>
+                  <a href="#how-it-works">How It Works</a>
+                </li>
+                <li>
+                  <a href="#team">Our Team</a>
+                </li>
+                <li>
+                  <a href="/about">About</a>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-column">
+              <h4>Legal</h4>
+              <ul>
+                <li>
+                  <a href="#">Privacy Policy</a>
+                </li>
+                <li>
+                  <a href="#">Terms of Service</a>
+                </li>
+                <li>
+                  <a href="#">Cookie Policy</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <p>
+              &copy; {new Date().getFullYear()} ResumeGenius. All rights
+              reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

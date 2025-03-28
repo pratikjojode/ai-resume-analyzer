@@ -8,10 +8,12 @@
 
 .upload-header-nav {
   background-color: white;
-  padding: 0 50px;
+  padding: 0px 50px;
+  border: 2px solid #e2e8f0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
+
   z-index: 1;
 }
 
@@ -46,6 +48,7 @@
 
 .upload-container {
   width: 100%;
+  border: 2px solid #e2e8f0;
   max-width: 800px;
   background: white;
   border-radius: 16px;
