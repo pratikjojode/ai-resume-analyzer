@@ -116,18 +116,15 @@ const ResumeUpload = () => {
             >
               Profile
             </Button>
-            <Button
+            <button
               type="primary"
               shape="round"
+              className=" btn try-btn"
               onClick={() => navigate("/login")}
               icon={<FiLogIn />}
-              style={{
-                background: "linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)",
-                border: "none",
-              }}
             >
               Login
-            </Button>
+            </button>
           </Space>
         </div>
       </Header>

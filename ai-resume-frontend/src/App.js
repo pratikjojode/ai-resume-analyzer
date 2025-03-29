@@ -19,6 +19,7 @@ import Profile from "./users/Profile";
 import About from "./pages/About";
 
 import ResumeViewer from "./pages/ResumeViewer";
+import ContactPage from "./pages/ContactPage";
 
 // Component to handle scroll to top
 const ScrollToTop = () => {
@@ -40,6 +41,7 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/viewResume/:resumeId" element={<ResumeViewer />} />
         <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

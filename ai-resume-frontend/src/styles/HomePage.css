@@ -20,7 +20,13 @@
   background-color: var(--white);
   min-height: 100vh;
 }
-
+.try-btn {
+  background-color: gold !important;
+  color: black !important;
+  border-radius: 15px;
+  padding: 10px !important;
+  border: 2px solid gold !important;
+}
 .container {
   max-width: 1200px;
   margin: 10px auto;

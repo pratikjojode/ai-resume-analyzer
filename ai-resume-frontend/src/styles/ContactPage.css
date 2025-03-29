@@ -1,0 +1,245 @@
+/* 🌟 Modern Contact Page Styling */
+.contact-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  background: linear-gradient(135deg, #eef2f3 0%, #dfe9f3 100%);
+  padding: 2rem;
+  font-family: "Poppins", sans-serif;
+}
+
+/* ✨ Contact Wrapper */
+.contact-wrapper {
+  display: flex;
+  max-width: 1200px;
+  width: 100%;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  transition: transform 0.3s ease-in-out;
+}
+
+.contact-wrapper:hover {
+  transform: scale(1.01);
+}
+
+/* 📩 Left Side - Contact Info */
+.contact-left {
+  flex: 1;
+  padding: 3rem;
+  background: linear-gradient(135deg, #5b67df 0%, #8c52ff 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+}
+
+.contact-left h1 {
+  font-size: 2.8rem;
+  margin-bottom: 1.2rem;
+  font-weight: 700;
+}
+
+.contact-intro {
+  font-size: 1.2rem;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+/* 📍 Contact Info */
+.contact-info {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.2rem;
+}
+
+.info-icon {
+  font-size: 1.8rem;
+  margin-right: 1rem;
+  color: #ffdd57;
+  transition: transform 0.3s ease;
+}
+
+.info-icon:hover {
+  transform: scale(1.1);
+}
+
+.info-item h3 {
+  font-size: 1.3rem;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.info-item p {
+  opacity: 0.85;
+  font-size: 1.1rem;
+}
+
+/* 🔗 Social Links */
+.social-links {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.social-icon {
+  font-size: 2rem;
+  color: white;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.social-icon:hover {
+  transform: translateY(-3px);
+  color: #ffdd57;
+}
+
+/* 📧 Right Side - Contact Form */
+.contact-right {
+  flex: 1;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f8f9fc;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #5b67df;
+  box-shadow: 0 0 0 4px rgba(91, 103, 223, 0.3);
+}
+
+/* 📝 Textarea */
+.form-group textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+/* 🚀 Submit Button */
+.submit-btn {
+  background: linear-gradient(135deg, #5b67df 0%, #8c52ff 100%);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(91, 103, 223, 0.4);
+}
+
+.submit-btn:disabled {
+  background: #b0b3c3;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.submit-icon {
+  font-size: 1rem;
+}
+
+/* ✅ Success Message */
+.success-message {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 🎭 Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 📱 Responsive Design */
+@media (max-width: 900px) {
+  .contact-wrapper {
+    flex-direction: column;
+    transform: none;
+  }
+
+  .contact-left,
+  .contact-right {
+    padding: 2rem;
+  }
+
+  .contact-left {
+    border-radius: 16px 16px 0 0;
+  }
+
+  .contact-right {
+    border-radius: 0 0 16px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-container {
+    padding: 1rem;
+  }
+
+  .contact-left h1 {
+    font-size: 2.3rem;
+  }
+
+  .contact-intro {
+    font-size: 1rem;
+  }
+
+  .submit-btn {
+    padding: 0.8rem;
+  }
+}

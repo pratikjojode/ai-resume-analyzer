@@ -107,7 +107,7 @@ const About = () => {
     }
     return (
       <button
-        className="btn btn-primary"
+        className="btn btn-primary try-btn"
         onClick={() => navigate(`/viewResume/${resumeId}`)}
         disabled={!resumeId}
       >

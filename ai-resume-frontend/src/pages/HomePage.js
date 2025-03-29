@@ -151,7 +151,7 @@ const Home = () => {
             <a href="#team">Our Team</a>
             <a href="/about">About</a>
             <button
-              className="btn btn-primary"
+              className=" btn try-btn"
               onClick={() => navigate("/upload")}
             >
               Try Now

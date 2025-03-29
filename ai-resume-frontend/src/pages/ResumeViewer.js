@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
-import { FaFilePdf, FaSpinner, FaExclamationTriangle } from "react-icons/fa";
+import {
+  FaFilePdf,
+  FaSpinner,
+  FaExclamationTriangle,
+  FaTimes,
+} from "react-icons/fa";
 import "../styles/ResumeViewer.css";
+import { useNavigate } from "react-router-dom";
 
 const ResumeViewer = () => {
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchResumes = async () => {
       try {
@@ -45,64 +51,73 @@ const ResumeViewer = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-custom flex flex-col items-center py-10">
-      <header className="w-full py-6 text-white text-center shadow-lg">
-        <h1 className="text-3xl font-bold">Your Resumes</h1>
-        <p className="text-gray-300">
-          Manage and download your uploaded resumes
-        </p>
+    <div className="min-h-screen bg-custom flex flex-col items-center py-10 main">
+      <header className="about-header">
+        <div className="container">
+          <h1 className="logo" onClick={() => navigate("/")}>
+            ResumeGenius
+          </h1>
+
+          <nav className="nav-links">
+            <a href="/about">About</a>
+            <a href="/experience">Experience</a>
+            <a href="/contact">Contact</a>
+          </nav>
+        </div>
       </header>
 
       {loading ? (
-        <div className="mt-10 flex flex-col items-center text-gray-700">
-          <FaSpinner className="animate-spin text-4xl" />
-          <p className="mt-2">Loading resumes...</p>
+        <div className="loading-container">
+          <FaSpinner className="animate-spin text-4xl text-gray-700" />
+          <p>Loading resumes...</p>
         </div>
       ) : error ? (
-        <div className="mt-10 flex flex-col items-center text-red-600">
-          <FaExclamationTriangle className="text-4xl" />
-          <p className="mt-2">{error}</p>
+        <div className="error-container">
+          <FaExclamationTriangle className="text-4xl text-red-600" />
+          <p>{error}</p>
         </div>
       ) : (
-        <div className="w-full max-w-4xl px-6 mt-8">
+        <div className="w-full max-w-6xl px-6 mt-8">
           {resumes.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-6">
-              {resumes.map((resume) => (
-                <div key={resume._id} className="card">
-                  <div className="card-header">{resume.filename}</div>
-                  <div className="card-text">
-                    <strong>Uploaded At:</strong>{" "}
-                    {new Date(resume.uploadedAt).toLocaleString()}
+            <div className="resume-grid">
+              {resumes.map((resume) => {
+                const { parsedData } = resume || {};
+                const aiAnalysis = parsedData?.aiAnalysis || {};
+
+                return (
+                  <div key={resume._id} className="card">
+                    <div className="card-header">{resume.filename}</div>
+                    <div className="card-text">
+                      <strong>Uploaded At:</strong>{" "}
+                      {new Date(resume.uploadedAt).toLocaleString()}
+                    </div>
+                    <div className="card-text">
+                      <strong>Top Skills:</strong>{" "}
+                      {Array.isArray(aiAnalysis.skills)
+                        ? aiAnalysis.skills.join(", ")
+                        : "N/A"}
+                    </div>
+                    <div className="card-text">
+                      <strong>Experience:</strong>{" "}
+                      {aiAnalysis.experience?.total_years ?? "N/A"} years
+                    </div>
+                    <div className="card-text">
+                      <strong>Resume Score:</strong>{" "}
+                      {aiAnalysis.resume_quality_score ?? "N/A"} / 10
+                    </div>
+                    <div className="card-footer">
+                      <a
+                        href={`/uploads/${resume.filename}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <FaFilePdf className="mr-2 text-xl text-red-500" /> View
+                        / Download Resume
+                      </a>
+                    </div>
                   </div>
-                  <div className="card-text">
-                    <strong>Top Skills:</strong>{" "}
-                    {resume.parsedData?.aiAnalysis?.skills?.join(", ") || "N/A"}
-                  </div>
-                  <div className="card-text">
-                    <strong>Experience:</strong>{" "}
-                    {resume.parsedData?.aiAnalysis?.experience?.total_years ||
-                      "N/A"}{" "}
-                    years
-                  </div>
-                  <div className="card-text">
-                    <strong>Resume Score:</strong>{" "}
-                    {resume.parsedData?.aiAnalysis?.resume_quality_score ||
-                      "N/A"}{" "}
-                    / 10
-                  </div>
-                  <div className="card-footer">
-                    <a
-                      href={`/uploads/${resume.filename}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-blue-600 hover:text-blue-800"
-                    >
-                      <FaFilePdf className="mr-2 text-xl" /> View / Download
-                      Resume
-                    </a>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-center text-gray-600">No resumes found.</p>
